@@ -9,7 +9,7 @@
 
 var globals = {
 	r : 140,
-	definition : 28,
+	definition : 90,
 	starNr : 75,
 	globe : [],
 	offset : 0,
@@ -45,7 +45,7 @@ var globals = {
 	 globals.auto = !globals.auto;
   });
   
-  globals.sunLight = createVector(-HALF_PI,0,HALF_PI);
+  globals.sunLight = createVector(-HALF_PI,0.5,HALF_PI+0.1);
   globals.lastRotationX = HALF_PI;
   frameRate(30);
   globals.startBg = createGraphics(globals.w,globals.h);
@@ -76,11 +76,12 @@ globals.startBg.stroke("yellow");
  var endBeam = {x:0,y:0};
 
 
-  globals.startBg.ellipse(endBeam.x,endBeam.y,10 / scale,10 / scale);
-  globals.startBg.line(startBeam.x,startBeam.y,endBeam.x,endBeam.y);
+  //globals.startBg.ellipse(endBeam.x,endBeam.y,10 / scale,10 / scale);
+  //globals.startBg.line(startBeam.x,startBeam.y,endBeam.x,endBeam.y);
 
+var frontier = globals.definition+1 / 2;
  globals.globe = [];
-	for(var i = 0; i < globals.definition+1; i++){
+	for(var i = 0; i < globals.definition+2; i++){
 		var lat = map(i,0,globals.definition,0, PI);
 		globals.globe.push([]);
 		for(var j = 0; j < globals.definition+2; j++){
@@ -111,29 +112,29 @@ globals.startBg.stroke("yellow");
  }
  globals.offset=0;
  
+var deltaZ = 0.002;
+var deltaX = 0.005;
+var deltaY = 0;	
  function draw(){	 
   background(0);
+
   texture(globals.startBg);
   plane(globals.w,globals.h);
-	var deltaX = 0;
-	var deltaY = 0;
-	var deltaZ = 0;
-	var milli = 0;
-	if(globals.auto){
-		milli = millis();
-		var rotX = (milli / 4000);
-		deltaX =  rotX - globals.lastRotationX;
-		//deltaZ = (milli / 500) - globals.lastRotationY;
-		globals.lastRotationX = rotX;
-		//globals.lastRotationY = milli / 2000;
-		//rotateX(globals.lastRotationX);
-		//rotateY(globals.lastRotationY);
-	}else{
-		//rotateX(globals.lastRotationX);
-		//rotateY(globals.lastRotationY);
+
+
+
+	if(abs(globals.lastRotationZ) >= 0.3){
+		deltaZ*=-1;
+		
 	}
 
-	if(milli!=0){
+	globals.lastRotationX+=deltaX;
+	globals.lastRotationZ+=deltaZ;	
+		
+
+
+
+	if(deltaX!=0){
 			for(var i = 1; i < globals.definition+1; i++){
 				for(var j = 0; j < globals.definition+2; j++){
 				globals.globe[i][j].point = doRotate(globals.globe[i][j].point,deltaX,deltaY,deltaZ);
@@ -144,21 +145,28 @@ globals.startBg.stroke("yellow");
 			}
 			}
 	}
-	var maxDot = -100;
+	
 	for(var i = 1; i < globals.definition+1; i++){
 		
 	
 		beginShape(TRIANGLE_STRIP);
-			
 		for(var j = 0; j < globals.definition+2; j++){
-			var color = {r:90,g:105,b:120};
+			var color = {r:45,g:45,b:55};
 			var dot = scalarProduct(globals.globe[i][j].normale,globals.sunLight);
-			 if(dot > 0){
-				 var lightStrength = round(dot*70);
+			 if(dot >= 0){
+				 var lightStrength = round(dot*dot*30);
 				color.r += lightStrength;
 				color.g += lightStrength;
+				color.b += lightStrength*0.9;
 			 }
+			if(dot >= 0.6){
+				 var lightStrength = 1;
+				color.r += lightStrength;
+				color.g += lightStrength;
+				color.b += lightStrength;
+			 } 
 			fill(color.r,color.g,color.b);
+			//stroke(color.r,color.g,color.b);
 			var v1 = globals.globe[i][j].point;	
 			vertex(v1.x,v1.y,v1.z);
 			var v2 = globals.globe[i-1][j].point;
