@@ -1,0 +1,427 @@
+<!-- 
+Sphere : very simple 3D example by phm alias PhilMageo # 2012
+Help and comments are welcome !
+ -->
+
+<html>
+<head>
+<title>Sphere</title>
+ <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+
+<script type="text/javascript">
+var focal=1024;
+var choice=6;//15 degrees
+var running=false;
+var pos_x=0;
+var pos_y=0;
+var last_clic=99;
+var max_clic=10;
+var zdown=0.1;//can be changed to negative value!
+var opacity=0.7;
+
+function Point3D(x,y,z){
+this.x=x;
+this.y=y;
+this.z=z;
+}
+
+function Point2D(x,y){
+this.x=x;
+this.y=y;
+
+}
+
+function vector(x,y,z){
+this.x=x;
+this.y=y;
+this.z=z;
+}
+
+function darkenColor(astr,howMuch){
+r=0;
+g=0;
+b=0;
+a=1;
+pos=astr.indexOf("(");
+if(pos>-1){
+astr=astr.substr(pos+1,astr.length);
+pos=astr.indexOf(")");
+if(pos>-1){
+astr=astr.substr(0,pos);
+arr=astr.split(",");
+r=arr[0]-Math.floor(howMuch*arr[0]);
+g=arr[1]-Math.floor(howMuch*arr[1]);
+b=arr[2]-Math.floor(howMuch*arr[2]);
+a=arr[3];
+}
+}
+astr="rgba("+r+","+g+","+b+","+a+")";
+return (astr)
+}
+
+function lightsource(x,y,z,lux){
+this.vlight=new vector(x,y,z);
+this.lux=lux;
+}
+
+function sphere(radius,steps) {
+this.radius=radius;
+this.steps=steps;
+this.camera=new vector(0,0,1);//camera point of view
+this.canvas = document.getElementById("universe");
+this.ctx = this.canvas.getContext("2d");
+this.w=this.canvas.width;
+this.h=this.canvas.height;
+this.cx=this.w/2;
+this.cy=this.h/2;
+this.rx=0;
+this.ry=0;
+this.rz=0;
+this.rate=1;
+this.stepAngle=(Math.PI / 2 / this.steps);
+this.circleNbOfPts= (this.steps)*4;
+this.nCircles= (this.steps)*4;
+this.sphereNbOfPts=this.circleNbOfPts*this.nCircles;
+this.nfaces=this.sphereNbOfPts;
+
+this.faces=new Array(this.nfaces);
+ this.matrix=new Array(this.sphereNbOfPts);
+this.arr2D=new Array(this.sphereNbOfPts);
+
+// -----------------------------------------------
+this.calcpoints=function(){
+// compute points angle by angle around the first cadrant othe circle
+z=0;
+ var myAngle=0;
+ for(var i = 0;i < this.steps;i++)
+ {
+ myAngle=(i)*this.stepAngle;
+ x=Math.cos(myAngle);
+ y=Math.sin(myAngle);
+ this.matrix[this.steps-1-i]=new Point3D(x,y,z);
+ }
+ // feeding the other 3 cadrants by mirror image
+for(var i = 0;i <= this.steps;i++)
+ {
+ this.matrix[i+this.steps]=new Point3D(this.matrix[i].y,-this.matrix[i].x,z);
+ this.matrix[i+(2*this.steps)]=new Point3D(-this.matrix[i].x,-this.matrix[i].y,z);
+ this.matrix[i+(3*this.steps)]=new Point3D(-this.matrix[i].y,this.matrix[i].x,z)
+ }
+ // compute point around others circles by rotating around the y axis
+j=this.circleNbOfPts-1;
+ for(var i = 1;i < this.nCircles;i++){
+ry=(i)*this.stepAngle;
+for(var k = 0;k < this.circleNbOfPts;k++){
+j+=1;
+x=this.matrix[k].x;
+y=this.matrix[k].y;
+z=this.matrix[k].z;
+newz=-x*Math.sin(ry) + z*Math.cos(ry);
+x= x*Math.cos(ry) + z*Math.sin(ry);
+z=newz;
+this.matrix[j]=new Point3D(x,y,z);
+}
+}
+
+ for(var i = 0;i < this.matrix.length;i++)
+     {
+this.matrix[i].x= roundIt(this.matrix[i].x,3);
+this.matrix[i].y= roundIt(this.matrix[i].y,3);
+this.matrix[i].z= roundIt(this.matrix[i].z,3);
+
+x=this.matrix[i].x;
+y=this.matrix[i].y;
+z=this.matrix[i].z;
+}
+ }
+// -----------------------------------------------
+// Getting an array of faces with the number of 4 points + color + 2 free spaces
+this.calcfaces=function(){
+aturn=this.circleNbOfPts;
+a=0;
+b=a+1;
+c=a+aturn+1;
+d=c-1;
+
+for(var i=0 ;i<this.nfaces;i++){
+// colors
+acolor="rgba("+((180+(i*5))%250)+",120,"+((20+(i*15))%250)+","+opacity+")";
+this.faces[i]=[d,c,b,a,acolor,0,0];
+
+a=(a+1)%(this.nfaces);
+
+if(a%aturn==aturn-1)
+{
+b=a-aturn+1;
+d=c-aturn+1;
+}
+else
+{
+b=(a+1)%(this.nfaces);
+c=(a+aturn+1)%(this.nfaces);
+d=(c-1)%(this.nfaces);
+}
+
+}
+}
+// -----------------------------------------------
+// transform 3D to 2D and inflate the normalized model to its true size
+// and moves it to the center of the screen
+this.render=function(){
+
+for(var i = 0;i < this.matrix.length;i++)
+     {
+vscale=(focal/(focal+this.matrix[i].z*this.radius));
+x=((this.matrix[i].x*this.radius)/vscale);
+y=((this.matrix[i].y*this.radius)/vscale);
+x=Math.floor(x);
+y=Math.floor(y);
+x=this.cx+x;
+y=this.cy-y;
+this.arr2D[i]=new Point2D(x,y);
+     }
+}
+
+//----
+this.selectFacesByAngle=function(){
+ptx=this.camera.x;
+this.camera.x=0;
+
+for (var i = 0; i < this.nfaces; i++){
+ptnr=this.faces[i][0];
+pointA=this.matrix[ptnr];
+vectorNormal=new vector(pointA.x,pointA.y,pointA.z);
+dot=scalarProduct(vectorNormal,this.camera);
+this.faces[i][6]=dot;
+}
+this.camera.x=ptx;
+}
+
+this.sortFacesByNorm=function(){
+ if(this.steps<6)
+ {
+ this.faces.sort(sortby(6));
+ }
+}
+// -----------------------------------------------
+ this.draw=function() {
+ // effacement
+pot="white";pen="rgba(180,165,0,0.3)";bg="white";
+this.ctx.lineWidth = "0.5";
+this.ctx.strokeStyle=pen;
+this.ctx.beginPath();
+this.ctx.fillStyle=bg;
+this.ctx.fillRect(0,0,this.w,this.h);
+this.ctx.closePath();
+this.ctx.fill();
+
+boo_click=(last_clic<=max_clic);
+boo_touched=false;
+for(var i = 0;i < this.nfaces;i++)
+     {
+
+     if(this.faces[i][6] > 0)
+     {
+this.ctx.beginPath();
+
+a=this.arr2D[this.faces[i][0]];
+b=this.arr2D[this.faces[i][1]];
+c=this.arr2D[this.faces[i][2]];
+d=this.arr2D[this.faces[i][3]];
+
+//---------
+// changing the z coordinates in cas of clicking on a face
+if(boo_click && !boo_touched)
+{
+midx=Math.floor((a.x+b.x+c.x+d.x)/4);
+if(Math.abs(pos_x-midx)<max_clic)
+       {
+       midy=Math.floor((a.y+b.y+c.y+d.y)/4);
+       if(Math.abs(pos_y-midy)<max_clic)
+               {
+               boo_touched=true;
+			   
+this.faces[i][4]=darkenColor(this.faces[i][4],zdown);
+this.matrix[this.faces[i][0]].z-=zdown;
+this.matrix[this.faces[i][1]].z-=zdown;
+this.matrix[this.faces[i][2]].z-=zdown;
+this.matrix[this.faces[i][3]].z-=zdown;
+
+               }
+       }
+}
+
+//---------
+
+this.ctx.moveTo(a.x,a.y);
+this.ctx.lineTo(b.x,b.y);
+this.ctx.lineTo(c.x,c.y);
+this.ctx.lineTo(d.x,d.y);
+this.ctx.lineTo(a.x,a.y);
+
+this.ctx.fillStyle=this.faces[i][4];
+this.ctx.closePath();
+this.ctx.stroke();
+this.ctx.fill();
+}
+     }
+
+ }
+this.rotate=function(){
+rx=this.rx*this.rate; // rotation
+ry=this.ry*this.rate; // rotation
+rz=this.rz*this.rate; // rotation
+vPi=Math.PI;
+rx=(rx/360)*vPi;
+ry=(ry/360)*vPi;
+rz=(rz/360)*vPi;
+for(var i=0;i<this.matrix.length;i++)
+{
+x=this.matrix[i].x;
+y=this.matrix[i].y;
+z=this.matrix[i].z;
+
+if(rx>0)
+{
+newy=y*Math.cos(rx) - z*Math.sin(rx);
+z=y*Math.sin(rx) + z*Math.cos(rx);
+y=newy;
+}
+if(ry>0)
+{
+newz=-x*Math.sin(ry) + z*Math.cos(ry);
+x= x*Math.cos(ry) + z*Math.sin(ry);
+z=newz;
+}
+if(rz>0)
+{
+newx=x*Math.cos(rz) + y*Math.sin(rz);
+y=-x*Math.sin(rz) + y*Math.cos(rz);
+x=newx;
+}
+this.matrix[i].x=x;
+this.matrix[i].y=y;
+this.matrix[i].z=z;
+}
+}
+//------
+this.setRotate=function(rx,ry,rz){
+this.rx=rx;
+this.ry=ry;
+this.rz=rz;
+}
+
+}
+// -------------------------End of class ------------
+
+function roundIt(n,ndec){
+ndec=Math.pow(10,ndec);
+return(Math.round(n*ndec)/ndec);
+}
+
+ function setInfo(cmd,what)
+ {
+ str="";
+ if(cmd=="add")
+ {
+ str=document.getElementById("info").innerHTML;
+ str=str+"<br>"+what;
+ }
+ else if(cmd=="replace")
+ {
+
+ str=what;
+ }
+ document.getElementById("info").innerHTML=str;
+ }
+
+function canvas_drawArc(context,x,y,d,c1,c2) {
+context.beginPath();
+context.arc(x,y,d,0,Math.PI*2,true);
+ context.fillStyle = c1;
+ context.fill();
+ context.strokeStyle =c2;
+ context.stroke();
+context.closePath();
+}
+
+function canvas_write(context,x,y,c1,msg) {
+try {
+
+context.beginPath();
+context.fillText(msg,x,y);
+context.fillStyle = c1;
+context.fill();
+context.closePath();
+}
+catch(err)
+{
+setInfo("replace",err)
+}
+}
+
+function init(){
+setInfo("replace","click onto the sphere to crash it");
+var aSphere =new sphere(100,choice);
+aSphere.calcpoints();
+aSphere.calcfaces();
+aSphere.setRotate(10,15,5);
+myloop(aSphere);
+timerId=setInterval(myloop,300,aSphere);
+running=true;
+}
+
+function myloop(aSphere)
+{
+aSphere.rotate();
+aSphere.selectFacesByAngle();
+aSphere.sortFacesByNorm();
+aSphere.render();
+aSphere.draw();
+last_clic+=1;
+}
+
+function toggle(){
+if(running)
+       {
+zdown=-zdown;
+if(zdown>0)
+setInfo("replace","click on the sphere to crash it");
+else
+setInfo("replace","click on the sphere to expand it");
+       }
+else setInfo("replace","game is not running");
+}
+
+function scalarProduct(a,b){
+return a.x*b.x+a.y*b.y+a.z*b.z;
+}
+
+function sortby(i) {
+return function(a,b)
+ {
+ a = a[i];
+ b = b[i];
+ return a-b;
+ }
+}
+
+function point_it(event){
+if(running){
+ pos_x = event.offsetX?(event.offsetX):event.pageX-document.getElementById("universe").offsetLeft;
+ pos_y = event.offsetY?(event.offsetY):event.pageY-document.getElementById("universe").offsetTop;
+//-----------------
+last_clic=0;
+//------------------
+ }
+}
+
+ </script>
+</head>
+<body onLoad="init()" >
+<canvas width=300 height=320 id="universe" onclick="point_it(event);">
+
+</canvas>
+<div id="info" onclick="toggle()"></div>
+</body>
+</html>
