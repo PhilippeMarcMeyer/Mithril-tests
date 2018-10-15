@@ -1,4 +1,4 @@
-# P5js
+# Spherical Geometry
 Playing with p5.js
 
 This is a translation in javascript/p5.js 
