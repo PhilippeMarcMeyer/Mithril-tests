@@ -12,7 +12,7 @@ var globals = {
 	maxElevation : 0,
 	gridAtStage : 3,
 	countElevation : 0,
-	definition : 112,
+	definition : 144,
 	starNr : 75,
 	globe : [],
 	offset : 0,
@@ -33,7 +33,7 @@ var globals = {
 	sunSize : 40,
 	sunLight : null,
 	camera : null,
-    colors: null
+    colors : []
 };
 
 var startBeam,endBeam;
@@ -46,7 +46,7 @@ var cnv;
 	cnv.parent('demoZone');
 	cnv.mouseMoved(changeCursor) ;
 	frameRate(30);
-	globals.colors=[
+	let baseColors=[
 		color(50,50,200),
 		color(70,65,50),
 		color(70,90,50),
@@ -59,6 +59,22 @@ var cnv;
 		color(150,150,150),
 		color(200,200,200)
 	];
+	
+	baseColors.forEach(function(c){
+			let levels = c.levels;
+			let r = c.levels[0];
+			let g = c.levels[1];
+			let b = c.levels[2];
+			var ratios = [0.8,1.2,1.4,1.6];
+			globals.colors.push({
+				"darker":color(levels[0]*ratios[0],levels[1]*ratios[0],levels[2]*ratios[0]),
+				"base":c,
+				"lighter":color(levels[0]*ratios[1],levels[1]*ratios[1],levels[2]*ratios[1]),
+				"light":color(levels[0]*ratios[2],levels[1]*ratios[2],levels[2]*ratios[2]),
+				"lightest":color(levels[0]*ratios[3],levels[1]*ratios[3],levels[2]*ratios[3])
+				});
+		});		 
+				 
 	globals.maxElevation = globals.definition * globals.definition * 0.5;
 	globals.maxBeacons =  globals.maxElevation*globals.beaconRatio;
 	globals.beaconTrailColor = color(200,200,10);
@@ -294,23 +310,46 @@ function doRotate(vect,pitch, roll, yaw) {
 		var nrPoints = globals.globe[i].length;
 		for(var j = 0; j < nrPoints; j++){
 			var mainPt = globals.globe[i][j];
-			var acolor = globals.colors[mainPt.stage];
 			var dot = scalarProduct(mainPt.normale,globals.sunLight);
-			 if(dot >= 0.4 ){
-				 var lightStrength = 1+dot;
-				 levels = acolor.levels;
-				 var newColor = color(levels[0]*lightStrength*1.2,levels[1]*1.2,levels[2]);
-				fill(newColor);
-			 }else if(dot>=0.2){
-				fill(acolor);
-			 }else{
-				fill(acolor);
-			 }			 
+			  var intensity;
+			  if(dot < 0.2){
+				  intensity = "darker";
+			  }else if(dot < 0.4){
+				  intensity = "base";
+			  }else if(dot < 0.6){
+				  intensity = "lighter";
+			  }else if(dot < 0.8){
+				  intensity = "light";
+			  }else{
+				  intensity = "lightest";
+			  }
+
+			  fill(globals.colors[mainPt.stage][intensity]);
+			  
+		    //var stage1 = mainPt.stage;
+			//var stage2 = globals.globe[i-1][j].stage;
+
 			var v1 = mainPt.point;	
-				var v1 = mainPt.point;	
-				vertex(v1.x,v1.y,v1.z);
-				var v2 = globals.globe[i-1][j].point;
+			vertex(v1.x,v1.y,v1.z);
+			var v2 = globals.globe[i-1][j].point;
+			//var stageDifference = abs(stage1- stage2);
+			//if(stageDifference <= 1){
+			//	vertex(v2.x,v2.y,v2.z);	
+			//}else{
+				/*
+				var nrPointsBetween = stageDifference -1;
+				var direction = (stage1> stage2) ? -1 : 1;
+				var diffX = (v2.x - v1.x)/stageDifference;
+				var diffY = (v2.y - v1.y)/stageDifference;
+				var diffZ = (v2.z - v1.z)/stageDifference;
+				for(var k = 1; k <= nrPointsBetween;k++){
+					fill(globals.colors[mainPt.stage+(k*direction)][intensity]);
+					vertex(v1.x+(k*diffX),v1.y+(k*diffY),v1.z+(k*diffZ));	
+
+				}
+				*/
 				vertex(v2.x,v2.y,v2.z);	
+			//}
 		}
 		endShape();
 	}
