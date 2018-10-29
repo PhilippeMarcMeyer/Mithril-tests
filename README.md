@@ -1,7 +1,7 @@
 # Spherical Geometry
 Playing with p5.js
 
-![screen shot](https://raw.githubusercontent.com/PhilippeMarcMeyer/SphericalGeometry/master/sphere.png)
+![screen shot](https://github.com/PhilippeMarcMeyer/PhilippeMarcMeyer.github.io/blob/master/sphere.png?raw=true)
 
 This is a translation in javascript/p5.js 
 of Daniel Shiffman's coding challenge : 
