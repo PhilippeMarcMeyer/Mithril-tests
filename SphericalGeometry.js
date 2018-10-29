@@ -12,13 +12,13 @@ var globals = {
 	maxElevation : 0,
 	gridAtStage : 3,
 	countElevation : 0,
-	definition : 112,
+	definition : 36,
 	starNr : 75,
 	globe : [],
 	offset : 0,
 	initialRotation : null,
 	lastRotationX:0.5,
-	lastRotationY:0,
+	lastRotationY:0.2,
 	lastRotationZ:0,
 	autoRotate:true,
 	startBg :null,
@@ -70,6 +70,7 @@ var cnv;
 	makeBackground();
 	globals.globe = [];
 	makeGlobe();
+	//globals.faces = makeFaces();
  }
  
  function draw(){	 
@@ -77,6 +78,7 @@ var cnv;
 	texture(globals.startBg);
 	plane(globals.w,globals.h);
     drawGlobe();
+	//drawGlobeWithFaces();
 }
  
  function addNextPoint(data){
@@ -264,6 +266,92 @@ function doRotate(vect,pitch, roll, yaw) {
     } 	
  }
  
+ function makeFaces(){
+	var noiseScaleX=0;
+	var rot90 = radians(90);
+	var faces = [];
+	var nrLat = globals.globe.length;
+	var nrLong = nrLat;
+	for(var i = 1; i < nrLat; i++){
+		for(var j = 1; j < nrLong; j++){
+			//var isBeacon = (random()+noise(noiseScaleX)/20 <= globals.beaconRatio  && globals.nrBeacons <= globals.maxBeacons);
+
+			var face = {"radius" : globals.r,"stage" : 0};
+			face.points = {"a":globals.globe[i-1][j].point,"b":globals.globe[i][j].point,"c":globals.globe[i][j-1].point,"d":globals.globe[i-1][j-1].point};
+			var x = (face.points.a.x + (face.points.c.x - face.points.a.x))/globals.r;
+			var y = (face.points.a.y + (face.points.c.y - face.points.a.y))/globals.r;
+			var z = (face.points.a.z + (face.points.c.z - face.points.a.z))/globals.r;
+			face.normale = createVector(x,y,z);
+			faces.push(face);
+
+		}
+	}
+	var nrFaces = faces.length;
+	for(var i = 0; i < nrFaces; i++){
+		var currentCol = i % nrLat;
+		var currentRow = floor(i / nrLat);
+		faces[i].north = (currentRow > 0) ? i-nrLat+1 : i + (nrLat-2);
+		faces[i].south = (currentRow < nrLat-1) ? i+nrLat : i -(nrLat-2);
+		faces[i].east = (currentCol == 0) ? i+nrLat-1 : i - 1;
+		faces[i].west = (currentCol == nrLat-1) ? i-nrLat+1 : i + 1;
+		var isBeacon = (random()+noise(noiseScaleX++)/20 <= globals.beaconRatio  && globals.nrBeacons <= globals.maxBeacons);
+		faces[i].beacon = {
+			"isBeacon" : isBeacon,
+			"beaconData":[],
+			"beaconMax": map(random(),0,1,7,13),
+			"beaconCounter": globals.beaconDelay
+			};
+	}
+   return faces;
+ }
+ function drawGlobeWithFaces(){
+	 if(globals.autoRotate){
+		if(abs(globals.lastRotationZ) >= 0.3){
+			deltaZ*=-1;
+		}
+		globals.lastRotationX+=deltaX;
+		globals.lastRotationZ+=deltaZ;	
+		if(frameCount < globals.drawTrailDuring){
+			globals.lastRotationX+=deltaX*4;
+			globals.lastRotationZ+=deltaZ*4;		
+		}
+		if(deltaX!=0){
+			 globals.faces.forEach(function(face){
+				face.points.a = doRotate(face.points.a,deltaX,deltaY,deltaZ);
+				face.points.b = doRotate(face.points.b,deltaX,deltaY,deltaZ);
+				face.points.c = doRotate(face.points.c,deltaX,deltaY,deltaZ);
+				face.points.d = doRotate(face.points.c,deltaX,deltaY,deltaZ);
+				face.normale = doRotate(face.normale,deltaX,deltaY,deltaZ);
+			});
+		}
+	 }
+	 
+	 globals.faces.forEach(function(face){
+	
+		var acolor = globals.colors[face.stage];
+		var dot = scalarProduct(face.normale,globals.sunLight);
+		stroke(255);
+
+		if(dot >= 0.4 ){
+		var lightStrength = 1+dot;
+		levels = acolor.levels;
+		var newColor = color(levels[0]*lightStrength*1.2,levels[1]*1.2,levels[2]);
+		fill(newColor);
+		}else if(dot>=0.2){
+		fill(acolor);
+		}else{
+		fill(acolor);
+		}	
+		noFill();
+	quad(face.points.a.x,face.points.a.y,face.points.a.z,face.points.b.x,face.points.b.y,face.points.b.z,face.points.c.x,face.points.c.y,face.points.c.z,face.points.d.x,face.points.d.y,face.points.d.z);
+
+
+		
+
+
+	 });
+
+ }
  function drawGlobe(){
 	 if(globals.autoRotate){
 		if(abs(globals.lastRotationZ) >= 0.3){
@@ -291,6 +379,7 @@ function doRotate(vect,pitch, roll, yaw) {
 	for(var i = 1; i < nbLat; i++){
 		beginShape(TRIANGLE_STRIP);
 		noStroke();
+		//stroke(255);
 		var nrPoints = globals.globe[i].length;
 		for(var j = 0; j < nrPoints; j++){
 			var mainPt = globals.globe[i][j];
@@ -305,12 +394,12 @@ function doRotate(vect,pitch, roll, yaw) {
 				fill(acolor);
 			 }else{
 				fill(acolor);
-			 }			 
-			var v1 = mainPt.point;	
+			 }	
 				var v1 = mainPt.point;	
-				vertex(v1.x,v1.y,v1.z);
 				var v2 = globals.globe[i-1][j].point;
+				vertex(v1.x,v1.y,v1.z);
 				vertex(v2.x,v2.y,v2.z);	
+
 		}
 		endShape();
 	}
