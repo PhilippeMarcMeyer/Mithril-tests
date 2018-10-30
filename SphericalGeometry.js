@@ -33,7 +33,9 @@ var globals = {
 	sunSize : 40,
 	sunLight : null,
 	camera : null,
-    colors : []
+    colors : [],
+	clickColor : "red",
+	clickStyle : "clickToAdd" // clickToLower
 };
 
 var startBeam,endBeam;
@@ -259,6 +261,7 @@ function doRotate(vect,pitch, roll, yaw) {
 			"radius" : globals.r,
 			"stage" : 0, // for color
 			"grid" : null,
+			"clicked":false,
 			"normale":normale,
 			"beacon":{
 				"isBeacon" : isBeacon,
@@ -323,8 +326,15 @@ function doRotate(vect,pitch, roll, yaw) {
 			  }else{
 				  intensity = "lightest";
 			  }
+				if(mainPt.clicked){
+					fill(globals.clickColor);
+				   if(globals.clickStyle == "clickToAdd"){
 
-			  fill(globals.colors[mainPt.stage][intensity]);
+				   }				   // clickToLower
+				}
+				else{
+					fill(globals.colors[mainPt.stage][intensity]);
+				}
 			  
 		    //var stage1 = mainPt.stage;
 			//var stage2 = globals.globe[i-1][j].stage;
@@ -509,6 +519,40 @@ function mouseReleased() {
 	var d = dist(mx, my, sunX, sunY);
 	if(d < globals.sunSize){
 		globals.autoRotate = !globals.autoRotate;
+	}else{
+		//clickColor
+		mx -= globals.w/2;
+		my -= globals.h/2;
+		var minDist = 999;
+		var iclic = null;
+		var jclic = null;
+			for(var i = 0; i < globals.definition; i++){
+				for(var j = 0; j < globals.definition; j++){
+						var mainPt = globals.globe[i][j];
+						var dotCam = scalarProduct(mainPt.normale,globals.camera);
+						if(dotCam > 0){
+							var scale = 512 / (512 - mainPt.point.z);
+							var d = dist(mx, my, mainPt.point.x*scale, mainPt.point.y*scale);
+							if(d < 20){
+								if(d < minDist){
+									minDist = d;
+									iclic = i;
+									jclic = j;
+								}
+							}
+						}
+				}
+			}
+			if(iclic !=null){
+				globals.globe[iclic][jclic].clicked = true;
+			}
+			
 	}
 }
 
+$(".clickStyle input[type='radio'").on("click",function(){
+	globals.clickStyle = $("input[name='clickStyle']:checked").val();
+	
+	$(".clickStyle label").removeClass("active");
+	$(this).parent().addClass("active");
+});

@@ -28,13 +28,18 @@
 		 padding-top: 30px;
 		 padding-left:50px;
 		 width:90%;
-	 }
-	 
+	}
 	 
 	h5 {
 		color: #2e44b9;
 		font-weight: bold;
 		font-size: 24px;;
+	}
+	
+	.radio-zone{
+		padding: 0px 8px 0px 8px;
+		border-radius:2px;
+		min-width:300px;
 	}
 	</style>
   </head>
@@ -58,7 +63,7 @@
     </nav>
   <div id="container">
   
-	  <div id="demoZone">
+	 
 	  <h5>Spherical Geometry</h5>
 	  <p>This sketch originates from Daniel Shiffman's coding challenge : Spherical Geometry
 	  <a href="https://github.com/CodingTrain/website/tree/master/CodingChallenges/CC_025_SphereGeometry" target="_blank">
@@ -66,9 +71,19 @@
 	  <p>A lot of updates after, here is the result</p>
 	  </p>
 	    <p><a href="https://github.com/PhilippeMarcMeyer/SphericalGeometry">Repository Github</a></p>
-	  </div>
-	  
-  
+	 <div id="demoZone">  </div>
+	  	<div class="row" >
+			<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+				<div class="btn-group btn-group-toggle radio-zone clickStyle" data-toggle="radio">
+					<label class="">
+					<input type="radio" name="clickStyle" id="clickToLower" value="clickToLower" autocomplete="off" checked> Click to lower
+					</label>&nbsp;
+					<label class="active">
+					<input type="radio" name="clickStyle" id="clickToAdd" value="clickToAdd" autocomplete="off"> Click to add
+					</label>
+				</div>	
+			</div>	
+		</div>	
   </div>
   
   
