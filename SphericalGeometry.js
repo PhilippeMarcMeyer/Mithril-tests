@@ -8,7 +8,7 @@
 */
 var globals = {
 	r : 160,
-	magStep : 1,
+	magStep : 0.5,
 	maxElevation : 0,
 	gridAtStage : 3,
 	countElevation : 0,
@@ -42,7 +42,8 @@ var startBeam,endBeam;
 var deltaZ = 0.001* Math.pow(globals.definition,0.2);
 var deltaX = 0.0025 * Math.pow(globals.definition,0.1);
 var deltaY = 0;	
-var cnv;
+var camY,camX;
+var cnv,mySphere;
  function setup(){
 	cnv = createCanvas(globals.w,globals.h,WEBGL);
 	cnv.parent('demoZone');
@@ -85,16 +86,61 @@ var cnv;
 	globals.lastRotationX = HALF_PI;
 	startBeam = {x:globals.sunLight.x,y:globals.sunLight.y,z:globals.sunLight.z};
 	endBeam = {x:0,y:0,z:0}; 
+	
+
+
 	makeBackground();
 	globals.globe = [];
+	
+	mySphere = sphere(60);
 	makeGlobe();
+	camY = -300;
+	camX = 0;
+	camera(camX, camY, 200, 0, 0, 0, 0,1, 0);
+		var delta;
+	cnv.mouseWheel(function(e){
+	var way = (e.deltaY > 0) ? 1 : -1;
+	if(way == 1){
+		delta = abs(camY) / 40 ;
+	}else{
+		delta = abs(camY) / 10;
+	}
+	if (delta > 1){
+		camY += way * delta ;
+	}else{
+		if(way == -1){
+			camY -= 1 ;
+		}
+
+	}
+
+	//if(camY < -40) camY = -40;
+	camera(camX, camY, 200, 0, 0, 0, 0,-1, 0);
+	// console.log(camY +" & " +way);
+
+  });
  }
  
- function draw(){	 
+ function draw(){	
+  var tt = millis();
+ 
 	background(0);
-	texture(globals.startBg);
-	plane(globals.w,globals.h);
+	//texture(globals.startBg);
+	//plane(globals.w,globals.h);
+	ambientLight(255);
+	/*
+	  var sunPos = p5.Vector.fromAngles(tt / 5000, PI / 4, 1000);
+	push();
+	  fill(255, 250, 136);
+	  translate(sunPos);
+	  sphere(60);
+	  pop();
+  */
+  
     drawGlobe();
+	
+
+
 }
  
  function addNextPoint(data){
@@ -231,6 +277,8 @@ function doRotate(vect,pitch, roll, yaw) {
   }
  }
  
+
+ 
  function makeGlobe(){
 	var intermediatePointsNumber = globals.definition - 2;
 	var segmentLength = globals.r / intermediatePointsNumber + 1;
@@ -328,9 +376,17 @@ function doRotate(vect,pitch, roll, yaw) {
 			  }
 				if(mainPt.clicked){
 					fill(globals.clickColor);
+					mainPt.clicked = false;
 				   if(globals.clickStyle == "clickToAdd"){
-
-				   }				   // clickToLower
+						if(mainPt.stage < globals.colors.length -1){
+							mainPt.stage++;
+						}
+				   }else{
+					   	if(mainPt.stage > 0){
+							globals.countElevation--;
+							mainPt.stage--;
+						}
+				   }					   
 				}
 				else{
 					fill(globals.colors[mainPt.stage][intensity]);
@@ -508,7 +564,7 @@ function changeCursor(){
 
 	}
 }
-
+/*
 function mouseReleased() {
 	var mx = mouseX;
 	var my = mouseY;
@@ -549,10 +605,12 @@ function mouseReleased() {
 			
 	}
 }
-
+*/
+/*
 $(".clickStyle input[type='radio'").on("click",function(){
 	globals.clickStyle = $("input[name='clickStyle']:checked").val();
 	
 	$(".clickStyle label").removeClass("active");
 	$(this).parent().addClass("active");
 });
+*/
